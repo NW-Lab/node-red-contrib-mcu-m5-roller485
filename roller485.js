@@ -6,20 +6,23 @@
 // Roller485のI2Cアドレス
 const ROLLER485_ADDR = 0x64;
 
-// レジスタアドレス
-const REG_MOTOR_ENABLE = 0x00;   // モーターON/OFFレジスタ
-const REG_MODE = 0x01;           // モード設定レジスタ
-const REG_ANGLE = 0x10;          // 角度制御レジスタ(32bit)
-const REG_SPEED = 0x20;          // 速度設定レジスタ
-const REG_CURRENT_ANGLE = 0x30;  // 現在角度読み取りレジスタ(32bit)
+// レジスタアドレス (M5Stack公式プロトコルに準拠)
+const REG_OUTPUT = 0x00;         // モーターON/OFFレジスタ (0:OFF, 1:ON)
+const REG_MODE = 0x01;           // モード設定レジスタ (1:Speed, 2:Position, 3:Current, 4:Encoder)
+const REG_POS = 0x80;            // 位置設定レジスタ (32bit int)
+const REG_POS_READBACK = 0x90;   // 位置読み取りレジスタ (32bit int)
+const REG_SPEED = 0x40;          // 速度設定レジスタ (32bit int)
+const REG_CURRENT = 0xB0;        // 電流設定レジスタ (32bit int)
+
+// モード定義
+const MODE_SPEED = 0x01;         // 速度制御モード
+const MODE_POSITION = 0x02;      // 位置制御モード (角度制御)
+const MODE_CURRENT = 0x03;       // 電流制御モード
+const MODE_ENCODER = 0x04;       // エンコーダーモード
 
 // モーター制御
 const MOTOR_OFF = 0x00;          // モーターOFF
 const MOTOR_ON = 0x01;           // モーターON
-
-// モード定義
-const MODE_ANGLE = 0x00;         // 角度制御モード
-const MODE_SPEED = 0x01;         // 速度制御モード
 
 module.exports = function(RED) {
     function Roller485Node(config) {
@@ -58,10 +61,10 @@ module.exports = function(RED) {
             node.status({fill: "green", shape: "dot", text: "connected"});
             
             // モーターをONにする
-            i2c.write(Uint8Array.of(REG_MOTOR_ENABLE, MOTOR_ON));
+            i2c.write(Uint8Array.of(REG_OUTPUT, MOTOR_ON));
             
-            // 角度制御モードに設定
-            i2c.write(Uint8Array.of(REG_MODE, MODE_ANGLE));
+            // 位置制御モード(角度制御)に設定
+            i2c.write(Uint8Array.of(REG_MODE, MODE_POSITION));
             
         } catch (e) {
             node.status({fill: "red", shape: "ring", text: "error"});
@@ -120,10 +123,10 @@ module.exports = function(RED) {
         node.on('close', function() {
             if (i2c) {
                 try {
-                    // モーターを停止
+                    // モーターを停止(位置を0にリセット)
                     setAngle(i2c, 0);
                     // モーターをOFFにする
-                    i2c.write(Uint8Array.of(REG_MOTOR_ENABLE, MOTOR_OFF));
+                    i2c.write(Uint8Array.of(REG_OUTPUT, MOTOR_OFF));
                     i2c.close();
                 } catch (e) {
                     node.error(`クローズエラー: ${e}`);
@@ -134,16 +137,17 @@ module.exports = function(RED) {
     
     // 角度を設定する関数
     function setAngle(i2c, angle) {
-        // 角度を整数に変換(内部では100倍した値を使用)
-        const angleValue = Math.round(angle * 100);
+        // 角度を位置(ポジション)として設定
+        // Roller485では位置は int32 (4バイト) で指定
+        const position = Math.round(angle);
         
-        // 32bitの角度値をバイト配列に変換(リトルエンディアン)
+        // 32bitの位置値をバイト配列に変換(リトルエンディアン)
         const bytes = new Uint8Array(5);
-        bytes[0] = REG_ANGLE;
-        bytes[1] = angleValue & 0xFF;
-        bytes[2] = (angleValue >> 8) & 0xFF;
-        bytes[3] = (angleValue >> 16) & 0xFF;
-        bytes[4] = (angleValue >> 24) & 0xFF;
+        bytes[0] = REG_POS;  // 位置設定レジスタ
+        bytes[1] = position & 0xFF;
+        bytes[2] = (position >> 8) & 0xFF;
+        bytes[3] = (position >> 16) & 0xFF;
+        bytes[4] = (position >> 24) & 0xFF;
         
         // レジスタに書き込み
         i2c.write(bytes);
@@ -151,10 +155,10 @@ module.exports = function(RED) {
     
     // 現在の角度を読み取る関数
     function getCurrentAngle(i2c) {
-        i2c.write(Uint8Array.of(REG_CURRENT_ANGLE));
+        i2c.write(Uint8Array.of(REG_POS_READBACK));
         const bytes = i2c.read(4);
-        const angleValue = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-        return angleValue / 100.0;
+        const position = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+        return position;
     }
     
     RED.nodes.registerType("roller485", Roller485Node);
