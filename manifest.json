@@ -1,7 +1,6 @@
 {
   "modules": {
-    "*": [
-      "./roller485"
-    ]
-  }
+    "mcu_roller485": "./node/roller485/mcu_roller485"
+  },
+  "preload": "mcu_roller485"
 }

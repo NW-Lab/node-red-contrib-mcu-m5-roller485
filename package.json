@@ -1,28 +1,56 @@
-{
-  "name": "node-red-contrib-mcu-m5-roller485",
-  "version": "1.0.0",
-  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",
-  "keywords": [
-    "node-red",
-    "node-red-mcu",
-    "m5stack",
-    "roller485",
-    "modbus"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
-  },
-  "node-red": {
-    "nodes": {
-      "roller485": "roller485.js"
-    }
-  },
-  "node-red-mcu": {
-    "nodes": {
-      "roller485": "roller485.js"
-    }
-  }
-}
+{{
+
+  "name": "node-red-contrib-mcu-m5-roller485",  "name": "node-red-contrib-mcu-m5-roller485",
+
+  "version": "1.0.0",  "version": "1.0.0",
+
+  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",
+
+  "main": "node/index.js",  "keywords": [
+
+  "keywords": [    "node-red",
+
+    "node-red",    "node-red-mcu",
+
+    "node-red-mcu",    "m5stack",
+
+    "m5stack",    "roller485",
+
+    "roller485",    "modbus"
+
+    "i2c"  ],
+
+  ],  "author": "",
+
+  "author": "",  "license": "MIT",
+
+  "license": "MIT",  "repository": {
+
+  "repository": {    "type": "git",
+
+    "type": "git",    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
+
+    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"  },
+
+  },  "node-red": {
+
+  "node-red": {    "nodes": {
+
+    "version": ">=3.0.0",      "roller485": "roller485.js"
+
+    "nodes": {    }
+
+      "mcu_roller485": "node/roller485/roller485.js"  },
+
+    }  "node-red-mcu": {
+
+  },    "nodes": {
+
+  "engines": {      "roller485": "roller485.js"
+
+    "node": ">=14.0.0"    }
+
+  }  }
+
+}}
+
