@@ -4,8 +4,11 @@
         color: '#ff9900',
         defaults: {
             name: {value: ""},
-            sda: {value: 21, required: true, validate: RED.validators.number()},
-            scl: {value: 22, required: true, validate: RED.validators.number()}
+            busName: {value: "default"},
+            usePins: {value: false},
+            sda: {value: ""},
+            scl: {value: ""},
+            hz: {value: ""}
         },
         inputs: 1,
         outputs: 1,
@@ -15,6 +18,39 @@
         },
         labelStyle: function() {
             return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+            const tabs = RED.tabs.create({
+                id: "node-roller485-tabs",
+                onchange: function(tab) {
+                    $("#node-roller485-tabs-content").children().hide();
+                    $("#" + tab.id).show();
+                }
+            });
+            tabs.addTab({
+                id: "roller485-tab-bus",
+                label: "Bus"
+            });
+            tabs.addTab({
+                id: "roller485-tab-pins",
+                label: "Pins"
+            });
+            
+            // Pinsタブの表示切り替え
+            $("#node-input-usePins").on("change", function() {
+                if ($(this).is(":checked")) {
+                    $(".pins-config").show();
+                } else {
+                    $(".pins-config").hide();
+                }
+            });
+            
+            // 初期状態の設定
+            if ($("#node-input-usePins").is(":checked")) {
+                $(".pins-config").show();
+            } else {
+                $(".pins-config").hide();
+            }
         }
     });
 </script>
@@ -24,13 +60,48 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+    
     <div class="form-row">
-        <label for="node-input-sda"><i class="fa fa-microchip"></i> SDA Pin</label>
-        <input type="number" id="node-input-sda" placeholder="21">
+        <ul style="min-width: 600px; margin-bottom: 20px;" id="node-roller485-tabs"></ul>
     </div>
-    <div class="form-row">
-        <label for="node-input-scl"><i class="fa fa-microchip"></i> SCL Pin</label>
-        <input type="number" id="node-input-scl" placeholder="22">
+    
+    <div id="node-roller485-tabs-content" style="min-height: 150px;">
+        <div id="roller485-tab-bus" style="display:none">
+            <div class="form-row">
+                <label for="node-input-busName"><i class="fa fa-random"></i> Bus Name</label>
+                <input type="text" id="node-input-busName" placeholder="default">
+                <div class="form-tips">
+                    <b>default</b> uses the default I2C bus for your device.
+                </div>
+            </div>
+        </div>
+        
+        <div id="roller485-tab-pins" style="display:none">
+            <div class="form-row">
+                <label style="width: auto; margin-right: 10px;">
+                    <input type="checkbox" id="node-input-usePins" style="width: auto; margin: 0;">
+                    Use custom pins
+                </label>
+            </div>
+            
+            <div class="pins-config">
+                <div class="form-row">
+                    <label for="node-input-sda"><i class="fa fa-microchip"></i> SDA</label>
+                    <input type="number" id="node-input-sda" placeholder="Pin number">
+                </div>
+                
+                <div class="form-row">
+                    <label for="node-input-scl"><i class="fa fa-microchip"></i> SCL</label>
+                    <input type="number" id="node-input-scl" placeholder="Pin number">
+                </div>
+                
+                <div class="form-row">
+                    <label for="node-input-hz"><i class="fa fa-tachometer"></i> Speed</label>
+                    <input type="number" id="node-input-hz" placeholder="Hz (default: 100000)">
+                    <span style="margin-left: 5px;">Hz</span>
+                </div>
+            </div>
+        </div>
     </div>
 </script>
 
@@ -57,12 +128,26 @@
     </dl>
 
     <h3>設定</h3>
+    
+    <h4>Busタブ</h4>
     <dl class="message-properties">
-        <dt>SDA Pin <span class="property-type">number</span></dt>
-        <dd>I2CのSDAピン番号(デフォルト: 21)</dd>
+        <dt>Bus Name <span class="property-type">string</span></dt>
+        <dd>I2Cバス名を指定します。デフォルトは "default" でデバイスのデフォルトI2Cバスを使用します。</dd>
+    </dl>
+    
+    <h4>Pinsタブ</h4>
+    <dl class="message-properties">
+        <dt>Use custom pins <span class="property-type">boolean</span></dt>
+        <dd>チェックするとカスタムピン設定を有効にします。</dd>
         
-        <dt>SCL Pin <span class="property-type">number</span></dt>
-        <dd>I2CのSCLピン番号(デフォルト: 22)</dd>
+        <dt>SDA <span class="property-type">number</span></dt>
+        <dd>I2CのSDAピン番号を指定します(カスタムピン使用時)。</dd>
+        
+        <dt>SCL <span class="property-type">number</span></dt>
+        <dd>I2CのSCLピン番号を指定します(カスタムピン使用時)。</dd>
+        
+        <dt>Speed <span class="property-type">number</span></dt>
+        <dd>I2C通信速度をHzで指定します。デフォルトは100000(100kHz)です。</dd>
     </dl>
 
     <h3>詳細</h3>
