@@ -3,8 +3,6 @@
  * Controls Roller485 motor via I2C interface
  */
 
-import {Node} from "nodered";
-
 // Roller485のI2Cアドレス
 const ROLLER485_ADDR = 0x64;
 
@@ -18,9 +16,10 @@ const REG_CURRENT_ANGLE = 0x30;  // 現在角度読み取りレジスタ(32bit)
 const MODE_ANGLE = 0x00;         // 角度制御モード
 const MODE_SPEED = 0x01;         // 速度制御モード
 
-class Roller485Node extends Node {
-    onStart(config) {
-        super.onStart(config);
+module.exports = function(RED) {
+    function Roller485Node(config) {
+        RED.nodes.createNode(this, config);
+        const node = this;
         
         // I2C設定を構築
         const i2cOptions = {
@@ -45,63 +44,86 @@ class Roller485Node extends Node {
             }
         }
         
+        let i2c;
+        
         try {
             // I2Cインスタンスを作成
-            this.i2c = new device.io.I2C(i2cOptions);
+            i2c = new device.io.I2C(i2cOptions);
             
-            this.status({fill: "green", shape: "dot", text: "connected"});
+            node.status({fill: "green", shape: "dot", text: "connected"});
             
             // 角度制御モードに設定
-            this.i2c.write(Uint8Array.of(REG_MODE, MODE_ANGLE));
+            i2c.write(Uint8Array.of(REG_MODE, MODE_ANGLE));
             
         } catch (e) {
-            this.status({fill: "red", shape: "ring", text: "error"});
-            trace(`I2C初期化エラー: ${e}\n`);
-            return;
-        }
-    }
-    
-    onMessage(msg) {
-        if (!this.i2c) {
+            node.status({fill: "red", shape: "ring", text: "error"});
+            node.error(`I2C初期化エラー: ${e}`);
             return;
         }
         
-        try {
-            let angle = msg.payload;
-            
-            // 数値チェック
-            if (typeof angle !== 'number' || isNaN(angle)) {
-                trace("msg.payloadは数値である必要があります\n");
+        // メッセージ受信時の処理
+        node.on('input', function(msg, send, done) {
+            if (!i2c) {
+                if (done) done();
                 return;
             }
             
-            // 角度を-360〜360度の範囲に制限
-            angle = Math.max(-360, Math.min(360, angle));
-            
-            // 角度をRoller485に送信
-            this.setAngle(angle);
-            
-            this.status({
-                fill: "green", 
-                shape: "dot", 
-                text: `angle: ${angle.toFixed(1)}°`
-            });
-            
-            // 成功メッセージを出力
-            msg.payload = {
-                angle: angle,
-                status: "ok"
-            };
-            this.send(msg);
-            
-        } catch (e) {
-            this.status({fill: "red", shape: "ring", text: "error"});
-            trace(`制御エラー: ${e}\n`);
-        }
+            try {
+                let angle = msg.payload;
+                
+                // 数値チェック
+                if (typeof angle !== 'number' || isNaN(angle)) {
+                    node.warn("msg.payloadは数値である必要があります");
+                    if (done) done();
+                    return;
+                }
+                
+                // 角度を-360〜360度の範囲に制限
+                angle = Math.max(-360, Math.min(360, angle));
+                
+                // 角度をRoller485に送信
+                setAngle(i2c, angle);
+                
+                node.status({
+                    fill: "green", 
+                    shape: "dot", 
+                    text: `angle: ${angle.toFixed(1)}°`
+                });
+                
+                // 成功メッセージを出力
+                msg.payload = {
+                    angle: angle,
+                    status: "ok"
+                };
+                
+                send = send || function() { node.send.apply(node, arguments); };
+                send(msg);
+                
+                if (done) done();
+                
+            } catch (e) {
+                node.status({fill: "red", shape: "ring", text: "error"});
+                node.error(`制御エラー: ${e}`, msg);
+                if (done) done(e);
+            }
+        });
+        
+        // ノード終了時の処理
+        node.on('close', function() {
+            if (i2c) {
+                try {
+                    // モーターを停止
+                    setAngle(i2c, 0);
+                    i2c.close();
+                } catch (e) {
+                    node.error(`クローズエラー: ${e}`);
+                }
+            }
+        });
     }
     
     // 角度を設定する関数
-    setAngle(angle) {
+    function setAngle(i2c, angle) {
         // 角度を整数に変換(内部では100倍した値を使用)
         const angleValue = Math.round(angle * 100);
         
@@ -114,31 +136,16 @@ class Roller485Node extends Node {
         bytes[4] = (angleValue >> 24) & 0xFF;
         
         // レジスタに書き込み
-        this.i2c.write(bytes);
+        i2c.write(bytes);
     }
     
     // 現在の角度を読み取る関数
-    getCurrentAngle() {
-        this.i2c.write(Uint8Array.of(REG_CURRENT_ANGLE));
-        const bytes = this.i2c.read(4);
+    function getCurrentAngle(i2c) {
+        i2c.write(Uint8Array.of(REG_CURRENT_ANGLE));
+        const bytes = i2c.read(4);
         const angleValue = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
         return angleValue / 100.0;
     }
     
-    onStop() {
-        if (this.i2c) {
-            try {
-                // モーターを停止
-                this.setAngle(0);
-                this.i2c.close();
-            } catch (e) {
-                trace(`クローズエラー: ${e}\n`);
-            }
-        }
-    }
-    
-    static type = "roller485";
-    static {
-        RED.nodes.registerType(this.type, this);
-    }
+    RED.nodes.registerType("roller485", Roller485Node);
 }
