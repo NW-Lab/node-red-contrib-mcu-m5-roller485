@@ -1,84 +1,28 @@
-{{{
-
+﻿{
   "name": "node-red-contrib-mcu-m5-roller485",
-
-  "version": "1.0.0",  "name": "node-red-contrib-mcu-m5-roller485",  "name": "node-red-contrib-mcu-m5-roller485",
-
+  "version": "1.0.0",
   "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",
-
-  "main": "node/index.js",  "version": "1.0.0",  "version": "1.0.0",
-
+  "main": "node/index.js",
   "keywords": [
-
-    "node-red",  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",
-
+    "node-red",
     "node-red-mcu",
-
-    "m5stack",  "main": "node/index.js",  "keywords": [
-
+    "m5stack",
     "roller485",
-
-    "i2c"  "keywords": [    "node-red",
-
+    "i2c"
   ],
-
-  "author": "",    "node-red",    "node-red-mcu",
-
+  "author": "",
   "license": "MIT",
-
-  "repository": {    "node-red-mcu",    "m5stack",
-
+  "repository": {
     "type": "git",
-
-    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"    "m5stack",    "roller485",
-
+    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
   },
-
-  "node-red": {    "roller485",    "modbus"
-
+  "node-red": {
     "version": ">=3.0.0",
-
-    "nodes": {    "i2c"  ],
-
+    "nodes": {
       "mcu_roller485": "node/roller485/roller485.js"
-
-    }  ],  "author": "",
-
+    }
   },
-
-  "engines": {  "author": "",  "license": "MIT",
-
+  "engines": {
     "node": ">=14.0.0"
-
-  }  "license": "MIT",  "repository": {
-
+  }
 }
-
-  "repository": {    "type": "git",
-
-    "type": "git",    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
-
-    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"  },
-
-  },  "node-red": {
-
-  "node-red": {    "nodes": {
-
-    "version": ">=3.0.0",      "roller485": "roller485.js"
-
-    "nodes": {    }
-
-      "mcu_roller485": "node/roller485/roller485.js"  },
-
-    }  "node-red-mcu": {
-
-  },    "nodes": {
-
-  "engines": {      "roller485": "roller485.js"
-
-    "node": ">=14.0.0"    }
-
-  }  }
-
-}}
-
