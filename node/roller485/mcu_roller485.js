@@ -46,11 +46,11 @@ class Roller485Node extends Node {
             };
             this.#i2cInstance = new this.#i2c.io(i2cOptions);
             
-            // モーターをONにする
-            this.#i2cInstance.write(Uint8Array.of(REG_OUTPUT, MOTOR_ON));
+            // モーターをONにする (レジスタアドレス + データ)
+            this.#writeRegister(REG_OUTPUT, Uint8Array.of(MOTOR_ON));
             
             // 位置制御モード(角度制御)に設定
-            this.#i2cInstance.write(Uint8Array.of(REG_MODE, MODE_POSITION));
+            this.#writeRegister(REG_MODE, Uint8Array.of(MODE_POSITION));
             
             this.status({fill: "green", shape: "dot", text: "connected"});
             
@@ -119,20 +119,27 @@ class Roller485Node extends Node {
         done?.();
     }
     
+    #writeRegister(reg, data) {
+        // レジスタアドレスとデータを結合
+        const buffer = new Uint8Array(1 + data.length);
+        buffer[0] = reg;
+        buffer.set(data, 1);
+        this.#i2cInstance.write(buffer);
+    }
+    
     #setAngle(angle) {
         // 角度を位置(ポジション)として設定
         const position = Math.round(angle);
         
         // 32bitの位置値をバイト配列に変換(リトルエンディアン)
-        const bytes = new Uint8Array(5);
-        bytes[0] = REG_POS;
-        bytes[1] = position & 0xFF;
-        bytes[2] = (position >> 8) & 0xFF;
-        bytes[3] = (position >> 16) & 0xFF;
-        bytes[4] = (position >> 24) & 0xFF;
+        const posBytes = new Uint8Array(4);
+        posBytes[0] = position & 0xFF;
+        posBytes[1] = (position >> 8) & 0xFF;
+        posBytes[2] = (position >> 16) & 0xFF;
+        posBytes[3] = (position >> 24) & 0xFF;
         
         // レジスタに書き込み
-        this.#i2cInstance.write(bytes);
+        this.#writeRegister(REG_POS, posBytes);
     }
     
     onStop() {
@@ -141,7 +148,7 @@ class Roller485Node extends Node {
                 // モーターを停止(位置を0にリセット)
                 this.#setAngle(0);
                 // モーターをOFFにする
-                this.#i2cInstance.write(Uint8Array.of(REG_OUTPUT, MOTOR_OFF));
+                this.#writeRegister(REG_OUTPUT, Uint8Array.of(MOTOR_OFF));
                 this.#i2cInstance.close();
             } catch (e) {
                 trace(`クローズエラー: ${e}\n`);
