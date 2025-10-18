@@ -3,6 +3,8 @@
  * Controls Roller485 motor via I2C interface
  */
 
+import {Node} from "nodered";
+
 // Roller485のI2Cアドレス
 const ROLLER485_ADDR = 0x64;
 
