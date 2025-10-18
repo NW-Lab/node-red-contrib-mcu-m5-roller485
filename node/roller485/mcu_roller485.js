@@ -11,10 +11,12 @@ const ROLLER485_ADDR = 0x64;
 // レジスタアドレス (M5Stack公式プロトコルに準拠)
 const REG_OUTPUT = 0x00;         // モーターON/OFFレジスタ (0:OFF, 1:ON)
 const REG_MODE = 0x01;           // モード設定レジスタ (1:Speed, 2:Position, 3:Current, 4:Encoder)
+const REG_SPEED = 0x40;          // 速度設定レジスタ (32bit int, -127〜127)
 const REG_POS = 0x80;            // 位置設定レジスタ (32bit int)
 const REG_POS_READBACK = 0x90;   // 位置読み取りレジスタ (32bit int)
 
 // モード定義
+const MODE_SPEED = 0x01;         // 速度制御モード
 const MODE_POSITION = 0x02;      // 位置制御モード (角度制御)
 
 // モーター制御
@@ -49,8 +51,8 @@ class Roller485Node extends Node {
             // モーターをONにする (レジスタアドレス + データ)
             this.#writeRegister(REG_OUTPUT, Uint8Array.of(MOTOR_ON));
             
-            // 位置制御モード(角度制御)に設定
-            this.#writeRegister(REG_MODE, Uint8Array.of(MODE_POSITION));
+            // 速度制御モードに設定 (ゆっくり動かすため)
+            this.#writeRegister(REG_MODE, Uint8Array.of(MODE_SPEED));
             
             this.status({fill: "green", shape: "dot", text: "connected"});
             
@@ -91,22 +93,23 @@ class Roller485Node extends Node {
                 return;
             }
             
-            // 角度を-360〜360度の範囲に制限
-            angle = Math.max(-360, Math.min(360, angle));
+            // 角度を速度に変換 (-127〜127の範囲、符号で方向決定)
+            // 正の値: 時計回り、負の値: 反時計回り
+            let speed = Math.max(-127, Math.min(127, Math.round(angle / 3)));
             
-            // 角度をRoller485に送信
-            this.#setAngle(angle);
+            // 速度をRoller485に送信
+            this.#setSpeed(speed);
             
             this.status({
                 fill: "green", 
                 shape: "dot", 
-                text: `angle: ${angle.toFixed(1)}°`
+                text: `speed: ${speed}`
             });
             
             // 成功メッセージを出力
             this.send({
                 payload: {
-                    angle: angle,
+                    speed: speed,
                     status: "ok"
                 }
             });
@@ -127,26 +130,27 @@ class Roller485Node extends Node {
         this.#i2cInstance.write(buffer);
     }
     
-    #setAngle(angle) {
-        // 角度を位置(ポジション)として設定
-        const position = Math.round(angle);
+    #setSpeed(speed) {
+        // 速度を設定 (-127〜127)
+        // 負の値の場合は符号付き32bit整数として扱う
+        const speedValue = speed < 0 ? (0xFFFFFFFF + speed + 1) : speed;
         
-        // 32bitの位置値をバイト配列に変換(リトルエンディアン)
-        const posBytes = new Uint8Array(4);
-        posBytes[0] = position & 0xFF;
-        posBytes[1] = (position >> 8) & 0xFF;
-        posBytes[2] = (position >> 16) & 0xFF;
-        posBytes[3] = (position >> 24) & 0xFF;
+        // 32bitの速度値をバイト配列に変換(リトルエンディアン)
+        const speedBytes = new Uint8Array(4);
+        speedBytes[0] = speedValue & 0xFF;
+        speedBytes[1] = (speedValue >> 8) & 0xFF;
+        speedBytes[2] = (speedValue >> 16) & 0xFF;
+        speedBytes[3] = (speedValue >> 24) & 0xFF;
         
         // レジスタに書き込み
-        this.#writeRegister(REG_POS, posBytes);
+        this.#writeRegister(REG_SPEED, speedBytes);
     }
     
     onStop() {
         if (this.#i2cInstance) {
             try {
-                // モーターを停止(位置を0にリセット)
-                this.#setAngle(0);
+                // モーターを停止(速度を0にする)
+                this.#setSpeed(0);
                 // モーターをOFFにする
                 this.#writeRegister(REG_OUTPUT, Uint8Array.of(MOTOR_OFF));
                 this.#i2cInstance.close();
