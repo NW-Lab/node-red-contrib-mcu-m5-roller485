@@ -7,10 +7,15 @@
 const ROLLER485_ADDR = 0x64;
 
 // レジスタアドレス
-const REG_MODE = 0x00;           // モード設定レジスタ
+const REG_MOTOR_ENABLE = 0x00;   // モーターON/OFFレジスタ
+const REG_MODE = 0x01;           // モード設定レジスタ
 const REG_ANGLE = 0x10;          // 角度制御レジスタ(32bit)
 const REG_SPEED = 0x20;          // 速度設定レジスタ
 const REG_CURRENT_ANGLE = 0x30;  // 現在角度読み取りレジスタ(32bit)
+
+// モーター制御
+const MOTOR_OFF = 0x00;          // モーターOFF
+const MOTOR_ON = 0x01;           // モーターON
 
 // モード定義
 const MODE_ANGLE = 0x00;         // 角度制御モード
@@ -51,6 +56,9 @@ module.exports = function(RED) {
             i2c = new device.io.I2C(i2cOptions);
             
             node.status({fill: "green", shape: "dot", text: "connected"});
+            
+            // モーターをONにする
+            i2c.write(Uint8Array.of(REG_MOTOR_ENABLE, MOTOR_ON));
             
             // 角度制御モードに設定
             i2c.write(Uint8Array.of(REG_MODE, MODE_ANGLE));
@@ -114,6 +122,8 @@ module.exports = function(RED) {
                 try {
                     // モーターを停止
                     setAngle(i2c, 0);
+                    // モーターをOFFにする
+                    i2c.write(Uint8Array.of(REG_MOTOR_ENABLE, MOTOR_OFF));
                     i2c.close();
                 } catch (e) {
                     node.error(`クローズエラー: ${e}`);
