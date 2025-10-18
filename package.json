@@ -1,0 +1,28 @@
+{
+  "name": "node-red-contrib-mcu-m5-roller485",
+  "version": "1.0.0",
+  "description": "Node-RED MCU Edition node for M5Stack Roller485 Unit",
+  "keywords": [
+    "node-red",
+    "node-red-mcu",
+    "m5stack",
+    "roller485",
+    "modbus"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
+  },
+  "node-red": {
+    "nodes": {
+      "roller485": "roller485.js"
+    }
+  },
+  "node-red-mcu": {
+    "nodes": {
+      "roller485": "roller485.js"
+    }
+  }
+}
