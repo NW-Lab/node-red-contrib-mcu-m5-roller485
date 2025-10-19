@@ -1,5 +1,15 @@
 module.exports = function (RED) {
-  const mcuHelper = global.get("mcuHelper");
+  // Helper resolver: obtain mcuHelper only when running under Node-RED MCU
+  function getMcuHelper() {
+    try {
+      // Preferred: injected on globalThis in MCU runtime
+      if (typeof globalThis !== "undefined" && globalThis.mcuHelper) return globalThis.mcuHelper;
+      // Fallback: if user exposed it via functionGlobalContext
+      const fgc = RED?.settings?.functionGlobalContext;
+      if (fgc && fgc.mcuHelper) return fgc.mcuHelper;
+    } catch (_) {}
+    return null;
+  }
 
   function Roller485Node(config) {
     RED.nodes.createNode(this, config);
@@ -27,6 +37,10 @@ module.exports = function (RED) {
     let i2c = null;
     function ensureI2C() {
       if (i2c) return i2c;
+      const mcuHelper = getMcuHelper();
+      if (!mcuHelper || typeof mcuHelper.openIO !== "function") {
+        throw new Error("This node requires Node-RED MCU runtime (mcuHelper not found)");
+      }
       // mcuHelper provides openIO based on editor options
       i2c = mcuHelper.openIO("I2C", node.options);
       return i2c;
@@ -102,6 +116,5 @@ module.exports = function (RED) {
     });
   }
 
-  Roller485Node.color = mcuHelper.color;
   RED.nodes.registerType("mcu_roller485", Roller485Node);
 };
