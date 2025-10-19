@@ -1,0 +1,72 @@
+<script type="text/javascript">
+RED.nodes.registerType('mcu_roller485',{
+    category: mcuHelper.category,
+    color: mcuHelper.color,
+    defaults: {
+        name: { value: "" },
+        addr: { value: 0x64, required: true, validate: function(v){ return (v>=1 && v<=127); } },
+        speed: { value: 0, required: false },
+        options: { value: { bus: "default" } },
+        moddable_manifest: {value: {include: "$(NODEREDMCU)/nodes/mcu/i2c/manifest.json"}}
+    },
+    inputs:1,
+    outputs:1,
+    icon: "mcu.png",
+    paletteLabel: 'Roller485',
+    label: function() {
+        return this.name || "Roller485";
+    },
+    oneditprepare: function() {
+        const io = { type:"I2C" };
+        $("#button-group-io-bus").on("click", function() {
+            mcuHelper.toggleIO(false, "io", io);
+        });
+        $("#button-group-io-pins").on("click", function() {
+            mcuHelper.toggleIO(true, "io", io);
+        });
+        const div = $("#node-mcu-rows");
+        mcuHelper.appendProperties.I2C(div, "io", io);
+        mcuHelper.toggleIO(false, "io", io);
+        if (this.options) mcuHelper.restoreProperties.I2C(this.options, "io", io);
+    },
+    oneditsave: function() {
+        const options = {};
+        mcuHelper.saveProperties.I2C(options, "io");
+        this.options = options;
+    }
+});
+</script>
+
+<script type="text/html" data-template-name="mcu_roller485">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Roller485">
+    </div>
+    <div class="form-row">
+        <label>I/O</label>
+        <span class="button-group">
+            <button type="button" class="red-ui-button toggle selected" id="button-group-io-bus">Bus</button>
+            <button type="button" class="red-ui-button toggle" id="button-group-io-pins">Pins</button>
+        </span>
+    </div>
+    <div id="node-mcu-rows"></div>
+    <div class="form-row">
+        <label for="node-input-addr">I2C Address</label>
+        <input type="number" id="node-input-addr" min="1" max="127" placeholder="100 (0x64)">
+    </div>
+    <div class="form-row">
+        <label for="node-input-speed">Speed</label>
+        <input type="number" id="node-input-speed" placeholder="0 (use device default)">
+        <div class="red-ui-help">単位はデバイス仕様準拠。未設定(0)なら既定値のまま。</div>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="mcu_roller485">
+    <p>M5Stack Unit Roller485 を I²C で制御するMCUノード。msg.payloadに角度[度]を入れると、その角度の位置制御を行う。</p>
+    <ul>
+        <li>msg.payload: 角度[度] (Number)</li>
+        <li>I2C Address: 既定0x64</li>
+        <li>Speed: 速度スカラー。0なら未設定。</li>
+        <li>I/O: デバイスのmanifest設定かPinsで指定</li>
+    </ul>
+</script>

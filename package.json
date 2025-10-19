@@ -1,0 +1,29 @@
+{
+  "name": "node-red-contrib-mcu-m5-roller485",
+  "version": "0.1.0",
+  "description": "Node-RED MCU Edition node for controlling M5Stack Unit Roller485 over I²C (set position by degrees with speed)",
+  "license": "MIT",
+  "author": "NW-Lab",
+  "keywords": [
+    "node-red",
+    "node-red-contrib",
+    "mcu",
+    "moddable",
+    "m5stack",
+    "roller485",
+    "i2c"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485/issues"
+  },
+  "homepage": "https://github.com/NW-Lab/node-red-contrib-mcu-m5-roller485#readme",
+  "node-red": {
+    "nodes": {
+      "mcu-roller485": "nodes/mcu-roller485.js"
+    }
+  }
+}
