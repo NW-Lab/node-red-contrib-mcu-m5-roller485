@@ -35,23 +35,28 @@ module.exports = function (RED) {
 
     // Open I2C on first message to avoid holding hardware when idle
     let i2c = null;
+    let warnedNoMcu = false;
     function ensureI2C() {
       if (i2c) return i2c;
       const mcuHelper = getMcuHelper();
       if (!mcuHelper || typeof mcuHelper.openIO !== "function") {
         // Graceful: in non-MCU Node-RED, warn and mark status, but do not throw
         try {
-          if (typeof node?.status === "function") {
-            node.status({ fill: "red", shape: "ring", text: "MCU runtime not found" });
-          }
-          if (typeof node?.warn === "function") {
-            node.warn("This node requires Node-RED MCU runtime (mcuHelper not found)");
+          if (!warnedNoMcu) {
+            if (typeof node?.status === "function") {
+              node.status({ fill: "red", shape: "ring", text: "MCU runtime not found" });
+            }
+            if (typeof node?.warn === "function") {
+              node.warn("This node requires Node-RED MCU runtime (mcuHelper not found)");
+            }
+            warnedNoMcu = true;
           }
         } catch (_) {}
         return null;
       }
       // mcuHelper provides openIO based on editor options
-      i2c = mcuHelper.openIO("I2C", node.options);
+      const opts = Object.assign({}, node.options || {}, { address: node.addr });
+      i2c = mcuHelper.openIO("I2C", opts);
       return i2c;
     }
 
@@ -61,8 +66,33 @@ module.exports = function (RED) {
       const tx = new Uint8Array(1 + bytes.length);
       tx[0] = reg;
       tx.set(bytes, 1);
-      hw.write(addr, tx);
-      return true;
+      try {
+        // Prefer ECMA-419 style: address set at open, write(buffer)
+        if (hw.write.length <= 1) {
+          hw.write(tx);
+        } else {
+          hw.write(addr, tx);
+        }
+        return true;
+      } catch (e1) {
+        try {
+          // Fallback to alternate signature
+          hw.write(addr, tx);
+          return true;
+        } catch (e2) {
+          try {
+            // Last resort: try buffer-only
+            hw.write(tx);
+            return true;
+          } catch (e3) {
+            node.status({ fill: "red", shape: "ring", text: `I2C write error: ${e3?.message || e2?.message || e1?.message}` });
+            if (!warnedNoMcu && typeof node?.warn === "function") {
+              node.warn(`I2C write failed (addr=0x${addr.toString(16)}, reg=0x${reg.toString(16)})`);
+            }
+            return false;
+          }
+        }
+      }
     }
 
     function int32ToBytes(val) {
