@@ -60,4 +60,9 @@ msg.payloadで角度(degree)を受け取りRollerをその角度を回転させ�
 	2. `RED.settings.functionGlobalContext.mcuHelper`
 - エディタUI側は `window.mcuHelper` があればI2CのBus/Pins UIを表示、無ければ簡易ヘルプのみ表示。
 
+### Wi‑Fiなしでの利用について
+- このノードはI2Cのみを使用するから、Wi‑Fi設定は不要だよ。オフラインでも普通に使える。
+- MCUのログに「No Wi‑Fi SSID」みたいなメッセが出ても、ネット通信を使わないなら無視してOK。
+- 本ノードが要求するmanifestはI2Cのみ（`$(NODEREDMCU)/nodes/mcu/i2c/manifest.json`）。もしプロジェクト全体からWi‑Fi関連を完全に外したい場合は、MCU側プロジェクトのmanifestからWi‑Fiモジュールを外してビルドしてね。
+
 

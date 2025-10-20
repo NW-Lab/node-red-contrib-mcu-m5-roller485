@@ -20,7 +20,7 @@ module.exports = function (RED) {
     node.addr = parseInt(config.addr || 0x64); // default 0x64
     node.speed = parseInt(config.speed || 0); // logical speed for motion, unit depends on device
     node.options = config.options || { bus: "default" };
-    node.moddable_manifest = config.moddable_manifest || { include: ["$(NODEREDMCU)/nodes/mcu/i2c/manifest.json"] };
+  node.moddable_manifest = config.moddable_manifest || { include: ["nodes/manifest.json"] };
 
     // ECMA-419 I2C constants from Roller docs
     const REG = {

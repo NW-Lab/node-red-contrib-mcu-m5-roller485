@@ -1,0 +1,5 @@
+{
+  "include": [
+    "$(NODEREDMCU)/nodes/mcu/i2c/manifest.json"
+  ]
+}

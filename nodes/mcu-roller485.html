@@ -8,8 +8,8 @@ RED.nodes.registerType('mcu_roller485',{
         name: { value: "" },
         addr: { value: 0x64, required: true, validate: function(v){ return (v>=1 && v<=127); } },
         speed: { value: 0, required: false },
-        options: { value: { bus: "default" } },
-        moddable_manifest: {value: {include: "$(NODEREDMCU)/nodes/mcu/i2c/manifest.json"}}
+    options: { value: { bus: "default" } },
+    moddable_manifest: {value: { include: ["nodes/manifest.json"] }}
     },
     inputs:1,
     outputs:1,
