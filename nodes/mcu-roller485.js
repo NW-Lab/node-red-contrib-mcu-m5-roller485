@@ -39,7 +39,16 @@ module.exports = function (RED) {
       if (i2c) return i2c;
       const mcuHelper = getMcuHelper();
       if (!mcuHelper || typeof mcuHelper.openIO !== "function") {
-        throw new Error("This node requires Node-RED MCU runtime (mcuHelper not found)");
+        // Graceful: in non-MCU Node-RED, warn and mark status, but do not throw
+        try {
+          if (typeof node?.status === "function") {
+            node.status({ fill: "red", shape: "ring", text: "MCU runtime not found" });
+          }
+          if (typeof node?.warn === "function") {
+            node.warn("This node requires Node-RED MCU runtime (mcuHelper not found)");
+          }
+        } catch (_) {}
+        return null;
       }
       // mcuHelper provides openIO based on editor options
       i2c = mcuHelper.openIO("I2C", node.options);
@@ -48,10 +57,12 @@ module.exports = function (RED) {
 
     function writeReg(addr, reg, bytes) {
       const hw = ensureI2C();
+      if (!hw) return false;
       const tx = new Uint8Array(1 + bytes.length);
       tx[0] = reg;
       tx.set(bytes, 1);
       hw.write(addr, tx);
+      return true;
     }
 
     function int32ToBytes(val) {
@@ -86,6 +97,11 @@ module.exports = function (RED) {
 
     node.on("input", (msg, send, done) => {
       try {
+        // Ensure runtime is ready
+        if (!ensureI2C()) {
+          // No-op on desktop Node-RED; don't crash the flow
+          return done();
+        }
         const degree = msg?.payload;
         if (degree === undefined || degree === null || isNaN(Number(degree))) {
           throw new Error("msg.payload に角度[deg]を数値で入れてね");

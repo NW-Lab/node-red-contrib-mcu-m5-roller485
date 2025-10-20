@@ -50,3 +50,14 @@ msg.payloadで角度(degree)を受け取りRollerをその角度を回転させ�
 - 速度の単位はデバイス仕様に依存（Arduinoライブラリ/ドキュメント準拠）
 - モード/出力は毎回設定しても冪等で問題ない構成にしてる
 
+### 非MCU環境（通常のNode-RED）での挙動
+- このノードはNode-RED MCU Edition専用。MCUランタイム（mcuHelper）が見つからない場合は処理をスキップし、ノードのステータスに「MCU runtime not found」、ログにWarningを出すだけでフローを止めない。
+- 実機制御は行われないので、動作確認は必ずNode-RED MCU環境で実施してね。
+
+### 開発メモ（mcuHelperの解決順）
+- ランタイム側は以下の順でmcuHelperを解決する：
+	1. `globalThis.mcuHelper`
+	2. `RED.settings.functionGlobalContext.mcuHelper`
+- エディタUI側は `window.mcuHelper` があればI2CのBus/Pins UIを表示、無ければ簡易ヘルプのみ表示。
+
+

@@ -1,7 +1,9 @@
 <script type="text/javascript">
+(function(){
+const __mcuHelper = (typeof mcuHelper !== 'undefined') ? mcuHelper : null;
 RED.nodes.registerType('mcu_roller485',{
-    category: mcuHelper.category,
-    color: mcuHelper.color,
+    category: (__mcuHelper && __mcuHelper.category) || 'MCU',
+    color: (__mcuHelper && __mcuHelper.color) || '#C0DEED',
     defaults: {
         name: { value: "" },
         addr: { value: 0x64, required: true, validate: function(v){ return (v>=1 && v<=127); } },
@@ -17,24 +19,30 @@ RED.nodes.registerType('mcu_roller485',{
         return this.name || "Roller485";
     },
     oneditprepare: function() {
+        const div = $("#node-mcu-rows");
+        if (!__mcuHelper) {
+            div.append('<div class="red-ui-help">このノードはNode-RED MCU Edition専用だよ。MCU環境で開くとI2C設定UIが出るよ。</div>');
+            return;
+        }
         const io = { type:"I2C" };
         $("#button-group-io-bus").on("click", function() {
-            mcuHelper.toggleIO(false, "io", io);
+            __mcuHelper.toggleIO(false, "io", io);
         });
         $("#button-group-io-pins").on("click", function() {
-            mcuHelper.toggleIO(true, "io", io);
+            __mcuHelper.toggleIO(true, "io", io);
         });
-        const div = $("#node-mcu-rows");
-        mcuHelper.appendProperties.I2C(div, "io", io);
-        mcuHelper.toggleIO(false, "io", io);
-        if (this.options) mcuHelper.restoreProperties.I2C(this.options, "io", io);
+        __mcuHelper.appendProperties.I2C(div, "io", io);
+        __mcuHelper.toggleIO(false, "io", io);
+        if (this.options) __mcuHelper.restoreProperties.I2C(this.options, "io", io);
     },
     oneditsave: function() {
+        if (!__mcuHelper) return; // 非MCU環境では何もしない
         const options = {};
-        mcuHelper.saveProperties.I2C(options, "io");
+        __mcuHelper.saveProperties.I2C(options, "io");
         this.options = options;
     }
 });
+})();
 </script>
 
 <script type="text/html" data-template-name="mcu_roller485">
